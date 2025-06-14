@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quicksort Partition Animation (Scoped)</title>
+    <title>Quicksort Partition Animation with Tracking</title>
     <style>
         /* Scope everything under #quicksort-demo */
         #quicksort-demo {
@@ -58,8 +58,9 @@
         #quicksort-demo .array-container {
             display: flex;
             justify-content: center;
-            margin: 30px 0;
+            margin: 40px 0;
             gap: 5px;
+            min-height: 90px;
         }
 
         #quicksort-demo .array-element {
@@ -73,7 +74,7 @@
             font-size: 1.4em;
             font-weight: bold;
             background: rgba(255, 255, 255, 0.2);
-            transition: all 0.3s ease;
+            transition: all 0.4s ease;
             position: relative;
         }
 
@@ -117,7 +118,33 @@
         #quicksort-demo .both-label {
             color: #9775fa;
         }
+        
+        /* NEW: Styling for pointer tracking display */
+        #quicksort-demo .pointer-tracking {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            font-size: 1.1em;
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            font-family: 'Courier New', Courier, monospace;
+        }
 
+        #quicksort-demo .pointer-tracking span {
+            font-weight: bold;
+        }
+
+        #quicksort-demo .pointer-tracking .value {
+            display: inline-block;
+            min-width: 30px;
+            padding: 2px 8px;
+            border-radius: 5px;
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
         #quicksort-demo .controls {
             text-align: center;
             margin: 30px 0;
@@ -159,6 +186,7 @@
             background: rgba(0, 0, 0, 0.3);
             border-radius: 10px;
             padding: 15px;
+            transition: all 0.3s ease;
         }
 
         #quicksort-demo .code-display {
@@ -195,72 +223,350 @@
             background: rgba(255, 107, 107, 0.2);
             border-radius: 10px;
             border: 2px solid #ff6b6b;
+            transition: opacity 0.5s, transform 0.5s;
+            opacity: 0;
+            transform: scale(0.9);
+        }
+
+        #quicksort-demo .recursion-count.visible {
+            opacity: 1;
+            transform: scale(1);
         }
     </style>
-
-
-
 </head>
 
 <body>
-    <!-- Wrapper div to contain everything -->
     <div id="quicksort-demo">
         <div class="container">
             <h1>🔍 Quicksort Partition: Why &lt;= and &gt;= Cause Infinite Loops</h1>
 
-            <!-- Bad Example -->
             <div class="demo-section bad-demo">
-                <div class="demo-title">❌ BAD: Using &lt;= and &gt;= (Causes Infinite Loop)</div>
-
+                <div class="demo-title">❌ BAD: Using &lt;= and &gt;=</div>
                 <div class="code-display">
-                    <div>while (left &lt;= right &amp;&amp; nums[left] <span class="highlight warning">&lt;=</span>
-                        pivot_val) left++;</div>
-                    <div>while (left &lt;= right &amp;&amp; nums[right] <span class="highlight warning">&gt;=</span>
-                        pivot_val) right--;</div>
+                    <div>while (left &lt;= right &amp;&amp; nums[left] <span class="highlight warning">&lt;=</span> pivot_val) left++;</div>
+                    <div>while (left &lt;= right &amp;&amp; nums[right] <span class="highlight warning">&gt;=</span> pivot_val) right--;</div>
                 </div>
-
                 <div class="array-container" id="badArray"></div>
-
+                <div class="pointer-tracking">
+                    <span>Left: <span id="badLeftTracker" class="value">-</span></span>
+                    <span>Right: <span id="badRightTracker" class="value">-</span></span>
+                    <span>Pivot: <span id="badPivotTracker" class="value">-</span></span>
+                </div>
                 <div class="controls">
                     <button class="btn" data-action="resetBad">Reset</button>
-                    <button class="btn" data-action="stepBad" id="badStepBtn">Step Forward</button>
+                    <button class="btn" data-action="stepBad">Step Forward</button>
                     <button class="btn" data-action="runBadDemo">Auto Run</button>
                 </div>
-
-                <div class="status" id="badStatus">
-                    Click "Step Forward" to see why this approach fails!
-                </div>
-
-                <div class="recursion-count" id="badRecursion" style="display: none;">
-                    Recursion Call #<span id="badRecursionCount">1</span> - Same subarray bounds!
+                <div class="status" id="badStatus">Click "Step Forward" to see why this approach fails!</div>
+                <div class="recursion-count" id="badRecursion">
+                    🚨 Infinite Loop! The next recursive call would be on the exact same subarray.
                 </div>
             </div>
 
-            <!-- Good Example -->
             <div class="demo-section good-demo">
-                <div class="demo-title">✅ GOOD: Using &lt; and &gt; (Works Correctly)</div>
-
+                <div class="demo-title">✅ GOOD: Using &lt; and &gt;</div>
                 <div class="code-display">
                     <div>do { left++; } while (nums[left] <span class="highlight success">&lt;</span> pivot_val);</div>
-                    <div>do { right--; } while (nums[right] <span class="highlight success">&gt;</span> pivot_val);
-                    </div>
+                    <div>do { right--; } while (nums[right] <span class="highlight success">&gt;</span> pivot_val);</div>
                 </div>
-
                 <div class="array-container" id="goodArray"></div>
-
+                 <div class="pointer-tracking">
+                    <span>Left: <span id="goodLeftTracker" class="value">-</span></span>
+                    <span>Right: <span id="goodRightTracker" class="value">-</span></span>
+                    <span>Pivot: <span id="goodPivotTracker" class="value">-</span></span>
+                </div>
                 <div class="controls">
                     <button class="btn" data-action="resetGood">Reset</button>
-                    <button class="btn" data-action="stepGood" id="goodStepBtn">Step Forward</button>
+                    <button class="btn" data-action="stepGood">Step Forward</button>
                     <button class="btn" data-action="runGoodDemo">Auto Run</button>
                 </div>
-
-                <div class="status" id="goodStatus">
-                    Click "Step Forward" to see the correct partitioning!
-                </div>
+                <div class="status" id="goodStatus">Click "Step Forward" to see the correct partitioning!</div>
             </div>
         </div>
     </div>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- Configuration ---
+            const INITIAL_ARRAY_BAD = [2, 7, 8]; // This array will fail with <=
+            const PIVOT_INDEX_BAD = 2; // Choosing the largest element as pivot
+
+            const INITIAL_ARRAY_GOOD = [5, 1, 9, 3, 7, 4, 6];
+            const PIVOT_INDEX_GOOD = 0; // Using first element as pivot
+
+            const AUTO_RUN_DELAY = 800; // ms
+
+            // --- State Management ---
+            let badState, goodState;
+            let badInterval, goodInterval;
+
+            const createInitialState = (arr, pivotIndex, isBadExample) => ({
+                array: [...arr],
+                low: 0,
+                high: arr.length - 1,
+                left: isBadExample ? 0 : -1, // Good example uses Sedgewick's do-while approach
+                right: isBadExample ? arr.length - 1 : arr.length,
+                pivotVal: arr[pivotIndex],
+                pivotIndex: pivotIndex,
+                phase: 'start', // 'start', 'findLeft', 'findRight', 'checkSwap', 'swap', 'done'
+                isFinished: false,
+                statusMessage: 'Click "Step" or "Auto Run" to begin.',
+                originalArray: [...arr]
+            });
+
+            // --- DOM Elements ---
+            const badArrayEl = document.getElementById('badArray');
+            const badStatusEl = document.getElementById('badStatus');
+            const badRecursionEl = document.getElementById('badRecursion');
+            const badLeftTrackerEl = document.getElementById('badLeftTracker');
+            const badRightTrackerEl = document.getElementById('badRightTracker');
+            const badPivotTrackerEl = document.getElementById('badPivotTracker');
+
+            const goodArrayEl = document.getElementById('goodArray');
+            const goodStatusEl = document.getElementById('goodStatus');
+            const goodLeftTrackerEl = document.getElementById('goodLeftTracker');
+            const goodRightTrackerEl = document.getElementById('goodRightTracker');
+            const goodPivotTrackerEl = document.getElementById('goodPivotTracker');
+
+
+            // --- Rendering Logic ---
+            const render = (state, UIElements) => {
+                const { containerEl, statusEl, leftTracker, rightTracker, pivotTracker } = UIElements;
+                
+                // Clear previous state
+                containerEl.innerHTML = ''; 
+                
+                // Render array elements
+                state.array.forEach((val, index) => {
+                    const el = document.createElement('div');
+                    el.textContent = val;
+                    el.className = 'array-element';
+
+                    if (index === state.pivotIndex) el.classList.add('pivot');
+
+                    const isLeft = index === state.left;
+                    const isRight = index === state.right;
+
+                    if (isLeft && isRight) {
+                        el.classList.add('both-pointers');
+                        const label = document.createElement('div');
+                        label.className = 'pointer-label both-label';
+                        label.textContent = 'left & right';
+                        el.appendChild(label);
+                    } else if (isLeft) {
+                        el.classList.add('left-pointer');
+                        const label = document.createElement('div');
+                        label.className = 'pointer-label left-label';
+                        label.textContent = 'left';
+                        el.appendChild(label);
+                    } else if (isRight) {
+                        el.classList.add('right-pointer');
+                        const label = document.createElement('div');
+                        label.className = 'pointer-label right-label';
+                        label.textContent = 'right';
+                        el.appendChild(label);
+                    }
+
+                    containerEl.appendChild(el);
+                });
+                
+                // Update status message and pointer tracking display
+                statusEl.innerHTML = state.statusMessage;
+                leftTracker.textContent = state.left;
+                rightTracker.textContent = state.right;
+                pivotTracker.textContent = state.pivotVal;
+            };
+
+            // --- Partitioning Logic ---
+
+            const stepBad = () => {
+                if (badState.isFinished) return;
+                const ui = { containerEl: badArrayEl, statusEl: badStatusEl, leftTracker: badLeftTrackerEl, rightTracker: badRightTrackerEl, pivotTracker: badPivotTrackerEl };
+
+                switch (badState.phase) {
+                    case 'start':
+                        badState.statusMessage = `Partitioning from index ${badState.low} to ${badState.high}. Pivot is ${badState.pivotVal}.`;
+                        badState.phase = 'findLeft';
+                        break;
+
+                    case 'findLeft':
+                        {
+                            badState.statusMessage = `Finding element > pivot from left. Current: \`nums[${badState.left}] <= ${badState.pivotVal}\`?`;
+                            if (badState.left <= badState.right && badState.array[badState.left] <= badState.pivotVal) {
+                                badState.left++;
+                            } else {
+                                badState.phase = 'findRight';
+                            }
+                            if (badState.left > badState.high + 1) { 
+                                badState.phase = 'done';
+                            }
+                            break;
+                        }
+
+                    case 'findRight':
+                        {
+                            badState.statusMessage = `Finding element < pivot from right. Current: \`nums[${badState.right}] >= ${badState.pivotVal}\`?`;
+                            if (badState.left <= badState.right && badState.array[badState.right] >= badState.pivotVal) {
+                                badState.right--;
+                            } else {
+                                badState.phase = 'checkSwap';
+                            }
+                            break;
+                        }
+
+                    case 'checkSwap':
+                        if (badState.left < badState.right) {
+                            badState.phase = 'swap';
+                            badState.statusMessage = `Pointers haven't crossed (\`left < right\`). Swapping ${badState.array[badState.left]} and ${badState.array[badState.right]}.`;
+                        } else {
+                            badState.phase = 'done';
+                            badState.statusMessage = `Pointers have crossed or met. Partition is finished.`;
+                        }
+                        break;
+
+                    case 'swap':
+                        [badState.array[badState.left], badState.array[badState.right]] = [badState.array[badState.right], badState.array[badState.left]];
+                        badState.left++;
+                        badState.right--;
+                        badState.statusMessage = `Swap complete. Moving pointers.`;
+                        badState.phase = 'findLeft';
+                        break;
+
+                    case 'done':
+                        if (badState.right === badState.high) {
+                            badState.statusMessage = `<span class="warning">Partition failed! The 'right' pointer never moved from the high boundary.</span>`;
+                            badRecursionEl.classList.add('visible');
+                        } else {
+                             badState.statusMessage = `<span class="success">Partition complete.</span>`;
+                        }
+                        badState.isFinished = true;
+                        setButtonsState(false);
+                        break;
+                }
+                render(badState, ui);
+            };
+
+            const stepGood = () => {
+                if (goodState.isFinished) return;
+                const ui = { containerEl: goodArrayEl, statusEl: goodStatusEl, leftTracker: goodLeftTrackerEl, rightTracker: goodRightTrackerEl, pivotTracker: goodPivotTrackerEl };
+
+                switch (goodState.phase) {
+                    case 'start':
+                        goodState.statusMessage = `Partitioning. Pivot is ${goodState.pivotVal}. Initializing left=${goodState.left}, right=${goodState.right}.`;
+                        goodState.phase = 'findLeft';
+                        break;
+
+                    case 'findLeft':
+                        goodState.statusMessage = `Incrementing 'left' while \`nums[left] < ${goodState.pivotVal}\`.`;
+                        do {
+                            goodState.left++;
+                        } while (goodState.array[goodState.left] < goodState.pivotVal);
+                        goodState.phase = 'findRight';
+                        break;
+
+                    case 'findRight':
+                        goodState.statusMessage = `Decrementing 'right' while \`nums[right] > ${goodState.pivotVal}\`.`;
+                        do {
+                            goodState.right--;
+                        } while (goodState.array[goodState.right] > goodState.pivotVal);
+                        goodState.phase = 'checkSwap';
+                        break;
+
+                    case 'checkSwap':
+                        if (goodState.left < goodState.right) {
+                            goodState.phase = 'swap';
+                            goodState.statusMessage = `Pointers haven't crossed. Swapping \`nums[${goodState.left}]\` and \`nums[${goodState.right}]\`.`;
+                        } else {
+                            goodState.phase = 'done';
+                            goodState.statusMessage = `Pointers have crossed. Partitioning complete. The partition index is ${goodState.right}.`;
+                        }
+                        break;
+
+                    case 'swap':
+                        [goodState.array[goodState.left], goodState.array[goodState.right]] = [goodState.array[goodState.right], goodState.array[goodState.left]];
+                        goodState.statusMessage = `Swap complete. Ready for next scan.`;
+                        goodState.phase = 'findLeft';
+                        break;
+
+                    case 'done':
+                        goodState.isFinished = true;
+                        goodState.statusMessage = `<span class="success">Partition successful! No infinite loop.</span>`;
+                        setButtonsState(false);
+                        break;
+                }
+                render(goodState, ui);
+            };
+
+
+            // --- Control & Event Handling ---
+            const setButtonsState = (isAutoRunning) => {
+                document.querySelectorAll('.btn').forEach(btn => {
+                    btn.disabled = isAutoRunning;
+                });
+            };
+
+            const stopAutoRun = () => {
+                clearInterval(badInterval);
+                clearInterval(goodInterval);
+                badInterval = null;
+                goodInterval = null;
+                setButtonsState(false);
+            };
+
+            const reset = (isBad) => {
+                stopAutoRun();
+                if (isBad) {
+                    badState = createInitialState(INITIAL_ARRAY_BAD, PIVOT_INDEX_BAD, true);
+                    badRecursionEl.classList.remove('visible');
+                    const ui = { containerEl: badArrayEl, statusEl: badStatusEl, leftTracker: badLeftTrackerEl, rightTracker: badRightTrackerEl, pivotTracker: badPivotTrackerEl };
+                    render(badState, ui);
+                } else {
+                    goodState = createInitialState(INITIAL_ARRAY_GOOD, PIVOT_INDEX_GOOD, false);
+                    const ui = { containerEl: goodArrayEl, statusEl: goodStatusEl, leftTracker: goodLeftTrackerEl, rightTracker: goodRightTrackerEl, pivotTracker: goodPivotTrackerEl };
+                    render(goodState, ui);
+                }
+            };
+
+
+            document.querySelector('.container').addEventListener('click', (e) => {
+                if (!e.target.matches('.btn')) return;
+
+                const action = e.target.dataset.action;
+                switch (action) {
+                    case 'resetBad':
+                        reset(true);
+                        break;
+                    case 'stepBad':
+                        stepBad();
+                        break;
+                    case 'runBadDemo':
+                        setButtonsState(true);
+                        badInterval = setInterval(() => {
+                            stepBad();
+                            if (badState.isFinished) stopAutoRun();
+                        }, AUTO_RUN_DELAY);
+                        break;
+                    case 'resetGood':
+                        reset(false);
+                        break;
+                    case 'stepGood':
+                        stepGood();
+                        break;
+                    case 'runGoodDemo':
+                        setButtonsState(true);
+                        goodInterval = setInterval(() => {
+                            stepGood();
+                            if (goodState.isFinished) stopAutoRun();
+                        }, AUTO_RUN_DELAY);
+                        break;
+                }
+            });
+
+            // --- Initial Setup ---
+            reset(true);
+            reset(false);
+        });
+    </script>
 </body>
 
 </html>
