@@ -1,0 +1,266 @@
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quicksort Partition Animation (Scoped)</title>
+    <style>
+        /* Scope everything under #quicksort-demo */
+        #quicksort-demo {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+
+        #quicksort-demo .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        #quicksort-demo h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        #quicksort-demo .demo-section {
+            margin: 40px 0;
+            padding: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        #quicksort-demo .demo-title {
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        #quicksort-demo .bad-demo .demo-title {
+            color: #ff6b6b;
+        }
+
+        #quicksort-demo .good-demo .demo-title {
+            color: #51cf66;
+        }
+
+        #quicksort-demo .array-container {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+            gap: 5px;
+        }
+
+        #quicksort-demo .array-element {
+            width: 60px;
+            height: 60px;
+            border: 3px solid white;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4em;
+            font-weight: bold;
+            background: rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        #quicksort-demo .array-element.pivot {
+            background: #ffd43b;
+            color: #333;
+            box-shadow: 0 0 20px rgba(255, 212, 59, 0.6);
+        }
+
+        #quicksort-demo .array-element.left-pointer {
+            border-color: #ff6b6b;
+            box-shadow: 0 0 15px rgba(255, 107, 107, 0.6);
+        }
+
+        #quicksort-demo .array-element.right-pointer {
+            border-color: #339af0;
+            box-shadow: 0 0 15px rgba(51, 154, 240, 0.6);
+        }
+
+        #quicksort-demo .array-element.both-pointers {
+            border-color: #9775fa;
+            box-shadow: 0 0 20px rgba(151, 117, 250, 0.8);
+        }
+
+        #quicksort-demo .pointer-label {
+            position: absolute;
+            bottom: -30px;
+            font-size: 0.9em;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+
+        #quicksort-demo .left-label {
+            color: #ff6b6b;
+        }
+
+        #quicksort-demo .right-label {
+            color: #339af0;
+        }
+
+        #quicksort-demo .both-label {
+            color: #9775fa;
+        }
+
+        #quicksort-demo .controls {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        #quicksort-demo .btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            margin: 0 10px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        #quicksort-demo .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        #quicksort-demo .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        #quicksort-demo .status {
+            text-align: center;
+            margin: 20px 0;
+            font-size: 1.2em;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        #quicksort-demo .code-display {
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 10px;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1em;
+            margin: 20px 0;
+            border-left: 4px solid #ffd43b;
+        }
+
+        #quicksort-demo .highlight {
+            background: rgba(255, 212, 59, 0.3);
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+
+        #quicksort-demo .warning {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+
+        #quicksort-demo .success {
+            color: #51cf66;
+            font-weight: bold;
+        }
+
+        #quicksort-demo .recursion-count {
+            text-align: center;
+            font-size: 1.5em;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(255, 107, 107, 0.2);
+            border-radius: 10px;
+            border: 2px solid #ff6b6b;
+        }
+    </style>
+
+
+
+</head>
+
+<body>
+    <!-- Wrapper div to contain everything -->
+    <div id="quicksort-demo">
+        <div class="container">
+            <h1>🔍 Quicksort Partition: Why &lt;= and &gt;= Cause Infinite Loops</h1>
+
+            <!-- Bad Example -->
+            <div class="demo-section bad-demo">
+                <div class="demo-title">❌ BAD: Using &lt;= and &gt;= (Causes Infinite Loop)</div>
+
+                <div class="code-display">
+                    <div>while (left &lt;= right &amp;&amp; nums[left] <span class="highlight warning">&lt;=</span>
+                        pivot_val) left++;</div>
+                    <div>while (left &lt;= right &amp;&amp; nums[right] <span class="highlight warning">&gt;=</span>
+                        pivot_val) right--;</div>
+                </div>
+
+                <div class="array-container" id="badArray"></div>
+
+                <div class="controls">
+                    <button class="btn" data-action="resetBad">Reset</button>
+                    <button class="btn" data-action="stepBad" id="badStepBtn">Step Forward</button>
+                    <button class="btn" data-action="runBadDemo">Auto Run</button>
+                </div>
+
+                <div class="status" id="badStatus">
+                    Click "Step Forward" to see why this approach fails!
+                </div>
+
+                <div class="recursion-count" id="badRecursion" style="display: none;">
+                    Recursion Call #<span id="badRecursionCount">1</span> - Same subarray bounds!
+                </div>
+            </div>
+
+            <!-- Good Example -->
+            <div class="demo-section good-demo">
+                <div class="demo-title">✅ GOOD: Using &lt; and &gt; (Works Correctly)</div>
+
+                <div class="code-display">
+                    <div>do { left++; } while (nums[left] <span class="highlight success">&lt;</span> pivot_val);</div>
+                    <div>do { right--; } while (nums[right] <span class="highlight success">&gt;</span> pivot_val);
+                    </div>
+                </div>
+
+                <div class="array-container" id="goodArray"></div>
+
+                <div class="controls">
+                    <button class="btn" data-action="resetGood">Reset</button>
+                    <button class="btn" data-action="stepGood" id="goodStepBtn">Step Forward</button>
+                    <button class="btn" data-action="runGoodDemo">Auto Run</button>
+                </div>
+
+                <div class="status" id="goodStatus">
+                    Click "Step Forward" to see the correct partitioning!
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>
