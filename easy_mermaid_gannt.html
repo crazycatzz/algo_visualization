@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Mermaid Gantt Chart Editor</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Mermaid.js for diagram rendering -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <!-- jsPDF for PDF export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link id="google-font-link" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow: hidden; /* Prevent body scroll */
+        }
+        #mermaid-output {
+            transition: transform 0.2s ease-in-out;
+            transform-origin: center center;
+        }
+        textarea, .intuitive-editor {
+            scrollbar-width: thin;
+            scrollbar-color: #94a3b8 #f1f5f9;
+        }
+        textarea::-webkit-scrollbar, .intuitive-editor::-webkit-scrollbar {
+            width: 8px;
+        }
+        textarea::-webkit-scrollbar-track, .intuitive-editor::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        textarea::-webkit-scrollbar-thumb, .intuitive-editor::-webkit-scrollbar-thumb {
+            background: #94a3b8;
+            border-radius: 4px;
+        }
+        textarea::-webkit-scrollbar-thumb:hover, .intuitive-editor::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+        .form-input, .form-select {
+            @apply w-full px-2 py-1 bg-slate-50 border border-slate-200 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 text-sm;
+        }
+        .btn-secondary {
+            @apply px-3 py-1 text-sm font-medium text-slate-700 bg-slate-100 border border-slate-300 rounded-md shadow-sm hover:bg-slate-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500;
+        }
+        .control-btn {
+            @apply p-1.5 text-slate-500 bg-slate-100 rounded-md hover:bg-slate-200 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-indigo-500;
+        }
+        #mermaid-output-container {
+             overflow: auto;
+        }
+        #mermaid-output svg {
+            max-width: none;
+            height: auto;
+            background-color: white; /* Ensure background for export */
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800">
+
+    <div class="flex flex-col h-screen">
+        
+        <div class="text-center py-4 px-8 border-b bg-white">
+            <h1 class="text-2xl md:text-3xl font-bold text-slate-900">Mermaid Gantt Chart Editor</h1>
+            <p class="text-slate-600 mt-1 text-sm">Use the tabs below to switch between the intuitive form and the raw code editor.</p>
+        </div>
+
+        <!-- Top Panel: Diagram Viewer -->
+        <div id="preview-panel" class="h-1/2 flex flex-col bg-white shadow-lg m-4 rounded-lg">
+            <div class="p-4 border-b border-slate-200 flex justify-between items-center">
+                <h2 class="text-lg font-semibold text-slate-700">Live Preview</h2>
+                <div class="flex items-center space-x-2">
+                    <button id="zoom-out-btn" class="control-btn" aria-label="Zoom Out" title="Zoom Out"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM13 10H7" /></svg></button>
+                    <button id="zoom-reset-btn" class="control-btn" aria-label="Reset Zoom" title="Reset Zoom"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h5M20 20v-5h-5" /></svg></button>
+                    <button id="zoom-in-btn" class="control-btn" aria-label="Zoom In" title="Zoom In"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" /></svg></button>
+                    <div class="w-px h-5 bg-slate-300 mx-1"></div>
+                    <button id="export-png-btn" class="control-btn" aria-label="Export as PNG" title="Export as PNG"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg></button>
+                    <button id="export-pdf-btn" class="control-btn" aria-label="Export as PDF" title="Export as PDF"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v2.586a1 1 0 01-.293.707l-4.414 4.414a1 1 0 01-.707.293H4V4zm4 6a1 1 0 100 2h4a1 1 0 100-2H8z" clip-rule="evenodd" /></svg></button>
+                    <button id="fullscreen-btn" class="control-btn" aria-label="Toggle Fullscreen" title="Toggle Fullscreen"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1v4m0 0h-4m4 0l-5-5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5v4m0 0h4" /></svg></button>
+                </div>
+            </div>
+            <div id="preview-content" class="flex-grow p-4 flex items-center justify-center min-h-0 relative bg-slate-50">
+                <div id="mermaid-output-container" class="w-full h-full absolute inset-0">
+                    <div id="mermaid-output" class="w-full h-full flex items-center justify-center"></div>
+                </div>
+                <div id="error-container" class="p-4 text-red-500 bg-red-50 rounded-lg hidden font-mono text-sm"></div>
+            </div>
+        </div>
+        
+        <div id="editor-panel" class="flex-1 flex flex-col bg-white shadow-lg m-4 mt-0 rounded-lg min-h-0">
+            <div class="flex border-b border-slate-200">
+                <button data-tab="intuitive" class="tab-button flex-1 p-4 text-center font-semibold text-sm text-indigo-600 border-b-2 border-indigo-600">Intuitive Editor</button>
+                <button data-tab="code" class="tab-button flex-1 p-4 text-center font-semibold text-sm text-slate-500">Code Editor</button>
+            </div>
+            <div class="flex-grow flex flex-col min-h-0">
+                <div id="intuitive-panel" class="tab-panel flex flex-col flex-grow min-h-0">
+                    <div id="intuitive-editor-form" class="intuitive-editor flex-grow p-4 space-y-4 overflow-y-auto"></div>
+                    <div class="p-4 border-t border-slate-200"><button id="add-section-btn" class="btn-secondary w-full">+ Add Section</button></div>
+                </div>
+                <div id="code-panel" class="tab-panel hidden flex-grow flex flex-col">
+                    <textarea id="mermaid-input" class="w-full h-full p-4 resize-none bg-white text-slate-800 font-mono text-sm focus:outline-none" spellcheck="false">
+gantt
+    title Project Timeline
+    dateFormat  YYYY-MM-DD
+    axisFormat  %Y-%m
+    section Project Setup
+    Research        :done, des1, 2024-01-01, 2024-01-20
+    Planning        :active, des2, 2024-01-20, 10d
+    Design          :des3, after des2, 15d
+
+    section Development
+    Frontend Coding :crit, done, 2024-02-10, 20d
+    Backend Coding  :crit, done, after des3, 25d
+    API Integration :crit, active, 15d
+
+    section Testing & Deployment
+    Unit Testing    : 5d
+    Deployment      : 5d
+                    </textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { jsPDF } = window.jspdf;
+        mermaid.initialize({ startOnLoad: false, theme: 'default' });
+
+        const mermaidInput = document.getElementById('mermaid-input');
+        const mermaidOutput = document.getElementById('mermaid-output');
+        const errorContainer = document.getElementById('error-container');
+        const intuitiveForm = document.getElementById('intuitive-editor-form');
+        const addSectionBtn = document.getElementById('add-section-btn');
+        
+        let isUpdatingFromForm = false;
+        let currentZoom = 1.0;
+        let lastRenderResult = null;
+
+        const parseMermaidCode = (code) => {
+            const lines = code.split('\n');
+            const data = { title: '', dateFormat: '', axisFormat: '', sections: [] };
+            let currentSection = null;
+            for (const line of lines) {
+                const trimmedLine = line.trim();
+                if (trimmedLine.startsWith('title')) data.title = trimmedLine.substring(5).trim();
+                else if (trimmedLine.startsWith('dateFormat')) data.dateFormat = trimmedLine.substring(10).trim();
+                else if (trimmedLine.startsWith('axisFormat')) data.axisFormat = trimmedLine.substring(10).trim();
+                else if (trimmedLine.startsWith('section')) {
+                    currentSection = { name: trimmedLine.substring(7).trim(), tasks: [] };
+                    data.sections.push(currentSection);
+                } else if (trimmedLine && currentSection && !trimmedLine.startsWith('gantt')) {
+                    const [name, taskDataStr] = trimmedLine.split(/:(.*)/s);
+                    if (!taskDataStr || !taskDataStr.trim()) continue;
+                    const task = { name: name.trim(), status: '', id: '', start: '', end: '' };
+                    let parts = taskDataStr.split(',').map(p => p.trim()).filter(Boolean);
+                    const statusKeywords = ['done', 'active', 'crit'];
+                    const foundStatuses = [];
+                    parts = parts.filter(p => {
+                        if (statusKeywords.includes(p)) { foundStatuses.push(p); return false; }
+                        return true;
+                    });
+                    task.status = foundStatuses.join(', ');
+                    if (parts.length > 0) {
+                        const lastPart = parts[parts.length - 1];
+                        if (/\d+d$/.test(lastPart) || /^\d{4}-\d{2}-\d{2}$/.test(lastPart)) task.end = parts.pop();
+                    }
+                    if (parts.length > 0) {
+                        const lastPart = parts[parts.length - 1];
+                        if (lastPart.startsWith('after ') || /^\d{4}-\d{2}-\d{2}$/.test(lastPart)) task.start = parts.pop();
+                    }
+                    if (parts.length > 0) task.id = parts.join(', ');
+                    currentSection.tasks.push(task);
+                }
+            }
+            return data;
+        };
+        const generateMermaidCode = (data) => {
+            let code = 'gantt\n';
+            if (data.title) code += `    title ${data.title}\n`;
+            if (data.dateFormat) code += `    dateFormat ${data.dateFormat}\n`;
+            if (data.axisFormat) code += `    axisFormat ${data.axisFormat}\n`;
+            data.sections.forEach(section => {
+                code += `    section ${section.name}\n`;
+                section.tasks.forEach(task => {
+                    const taskParts = [task.status, task.id, task.start, task.end].filter(Boolean);
+                    if (task.name && task.name.trim() && taskParts.length === 0) taskParts.push('1d');
+                    if (task.name && task.name.trim()) code += `    ${task.name} :${taskParts.join(', ')}\n`;
+                });
+            });
+            return code;
+        };
+        const renderFormFromObject = (data) => {
+            intuitiveForm.innerHTML = '';
+            const globalSettingsHtml = `<div class="space-y-2 p-3 border rounded-md bg-slate-50"><div><label class="block text-sm font-medium text-slate-600">Title</label><input type="text" data-key="title" value="${data.title}" class="form-input"></div><div><label class="block text-sm font-medium text-slate-600">Date Format</label><input type="text" data-key="dateFormat" value="${data.dateFormat}" class="form-input"></div></div>`;
+            intuitiveForm.insertAdjacentHTML('beforeend', globalSettingsHtml);
+            data.sections.forEach((section, sectionIndex) => {
+                const statusOptions = [ { value: '', text: '(None)' }, { value: 'done', text: 'Done' }, { value: 'active', text: 'Active' }, { value: 'crit', text: 'Critical' }, { value: 'crit, done', text: 'Critical, Done' }, { value: 'crit, active', text: 'Critical, Active' } ];
+                const sectionHtml = `<div class="p-3 border rounded-md space-y-3" data-section-index="${sectionIndex}"><div class="flex justify-between items-center"><input type="text" value="${section.name}" class="text-md font-semibold bg-transparent w-full focus:bg-slate-100 rounded px-1" data-section-name><button class="text-slate-400 hover:text-red-500" data-delete-section>&times;</button></div><div class="space-y-2" data-tasks-container>${section.tasks.map((task, taskIndex) => `
+                <div class="grid grid-cols-12 gap-2 p-2 rounded-md bg-slate-50" data-task-index="${taskIndex}">
+                    <input type="text" placeholder="Task Name" value="${task.name}" class="form-input col-span-11" data-task-key="name"><button class="text-slate-400 hover:text-red-500" data-delete-task>&times;</button>
+                    <select class="form-select col-span-6" data-task-key="status">${statusOptions.map(opt => `<option value="${opt.value}" ${task.status === opt.value ? 'selected' : ''}>${opt.text}</option>`).join('')}</select>
+                    <input type="text" placeholder="ID" value="${task.id}" class="form-input col-span-6" data-task-key="id"><input type="text" placeholder="Start (eg: 2024-01-01)" value="${task.start}" class="form-input col-span-6" data-task-key="start"><input type="text" placeholder="End/Duration (eg: 10d)" value="${task.end}" class="form-input col-span-6" data-task-key="end">
+                </div>`).join('')}</div><button class="btn-secondary w-full text-xs" data-add-task>+ Add Task</button></div>`;
+                intuitiveForm.insertAdjacentHTML('beforeend', sectionHtml);
+            });
+        };
+        const syncFromFormToCode = () => {
+             isUpdatingFromForm = true;
+             const data = { title: '', dateFormat: '', sections: [] };
+             data.title = intuitiveForm.querySelector('[data-key="title"]').value;
+             data.dateFormat = intuitiveForm.querySelector('[data-key="dateFormat"]').value;
+             intuitiveForm.querySelectorAll('[data-section-index]').forEach(sectionEl => {
+                const section = { name: sectionEl.querySelector('[data-section-name]').value, tasks: [] };
+                sectionEl.querySelectorAll('[data-task-index]').forEach(taskEl => {
+                    const task = {};
+                    taskEl.querySelectorAll('[data-task-key]').forEach(input => task[input.dataset.taskKey] = input.value);
+                    section.tasks.push(task);
+                });
+                data.sections.push(section);
+             });
+             const newCode = generateMermaidCode(data);
+             mermaidInput.value = newCode;
+             renderMermaid();
+             isUpdatingFromForm = false;
+        };
+        
+        const renderMermaid = () => {
+             return new Promise(async (resolve, reject) => {
+                document.getElementById('error-container').classList.add('hidden');
+                document.getElementById('mermaid-output-container').classList.remove('hidden');
+                mermaidOutput.innerHTML = '<div class="text-slate-400 animate-pulse">Loading diagram...</div>';
+                try {
+                    lastRenderResult = await mermaid.render('mermaid-svg-' + Date.now(), mermaidInput.value);
+                    mermaidOutput.innerHTML = lastRenderResult.svg;
+                    resolve(true);
+                } catch (error) {
+                    document.getElementById('mermaid-output-container').classList.add('hidden');
+                    const errorContainer = document.getElementById('error-container');
+                    errorContainer.classList.remove('hidden');
+                    const pre = document.createElement('pre');
+                    pre.textContent = error.str || error.message;
+                    errorContainer.innerHTML = '<strong>Error:</strong>';
+                    errorContainer.appendChild(pre);
+                    lastRenderResult = null;
+                    reject(error);
+                }
+            });
+        };
+        
+        const getSvgAsPngDataUrl = async (callback) => {
+            if (!lastRenderResult || !lastRenderResult.svg) {
+                await renderMermaid();
+            }
+            const svgElement = mermaidOutput.querySelector('svg');
+            if (!svgElement) {
+                alert('Could not find the diagram to export.');
+                return;
+            }
+        
+            const fontLink = document.getElementById('google-font-link').href;
+            const fontCss = await (await fetch(fontLink)).text();
+        
+            const styleEl = document.createElement('style');
+            styleEl.textContent = fontCss;
+        
+            const svgClone = svgElement.cloneNode(true);
+            svgClone.insertBefore(styleEl, svgClone.firstChild);
+        
+            const svgWidth = parseFloat(svgClone.getAttribute('width'));
+            const svgHeight = parseFloat(svgClone.getAttribute('height'));
+        
+            const svgData = new XMLSerializer().serializeToString(svgClone);
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+        
+            canvas.width = svgWidth;
+            canvas.height = svgHeight;
+        
+            const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(svgBlob);
+        
+            img.onload = () => {
+                ctx.drawImage(img, 0, 0, svgWidth, svgHeight);
+                callback(canvas.toDataURL('image/png'));
+                URL.revokeObjectURL(url);
+            };
+            img.src = url;
+        };
+
+        document.getElementById('export-png-btn').addEventListener('click', () => {
+            getSvgAsPngDataUrl((pngDataUrl) => {
+                const link = document.createElement('a');
+                link.href = pngDataUrl;
+                link.download = 'gantt-chart.png';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            });
+        });
+
+        document.getElementById('export-pdf-btn').addEventListener('click', () => {
+            getSvgAsPngDataUrl((pngDataUrl) => {
+                const img = new Image();
+                img.onload = () => {
+                    const pdf = new jsPDF({ orientation: img.width > img.height ? 'landscape' : 'portrait', unit: 'px', hotfixes: ["px_scaling"] });
+                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                    const pdfHeight = pdf.internal.pageSize.getHeight();
+                    const ratio = img.width / img.height;
+                    let imgWidth = img.width; let imgHeight = img.height;
+                    if (imgWidth > pdfWidth - 20) {
+                        imgWidth = pdfWidth - 20;
+                        imgHeight = imgWidth / ratio;
+                    }
+                    if (imgHeight > pdfHeight - 20) {
+                        imgHeight = pdfHeight - 20;
+                        imgWidth = imgHeight * ratio;
+                    }
+                    const x = (pdfWidth - imgWidth) / 2;
+                    const y = (pdfHeight - imgHeight) / 2;
+                    pdf.addImage(pngDataUrl, 'PNG', x, y, imgWidth, imgHeight);
+                    pdf.save('gantt-chart.pdf');
+                };
+                img.src = pngDataUrl;
+            });
+        });
+
+        document.getElementById('fullscreen-btn').addEventListener('click', () => {
+            const previewPanel = document.getElementById('preview-panel');
+            if (!document.fullscreenElement) {
+                previewPanel.requestFullscreen().catch(err => {
+                    alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        });
+
+        mermaidInput.addEventListener('input', () => {
+            if (isUpdatingFromForm) return;
+            renderMermaid().then(() => renderFormFromObject(parseMermaidCode(mermaidInput.value)));
+        });
+        intuitiveForm.addEventListener('input', syncFromFormToCode);
+        intuitiveForm.addEventListener('click', (e) => {
+            let data = parseMermaidCode(mermaidInput.value); let changed = false;
+            if (e.target.closest('[data-add-task]')) {
+                 const sectionIndex = e.target.closest('[data-section-index]').dataset.sectionIndex;
+                 data.sections[sectionIndex].tasks.push({ name: 'New Task', status: '', id: '', start: '', end: '5d' });
+                 changed = true;
+            } else if(e.target.closest('[data-delete-task]')) {
+                 const taskEl = e.target.closest('[data-task-index]'); const sectionIndex = taskEl.closest('[data-section-index]').dataset.sectionIndex; const taskIndex = taskEl.dataset.taskIndex;
+                 data.sections[sectionIndex].tasks.splice(taskIndex, 1); changed = true;
+            } else if(e.target.closest('[data-delete-section]')) {
+                const sectionIndex = e.target.closest('[data-section-index]').dataset.sectionIndex;
+                data.sections.splice(sectionIndex, 1); changed = true;
+            }
+            if(changed) { const newCode = generateMermaidCode(data); mermaidInput.value = newCode; renderFormFromObject(data); renderMermaid(); }
+        });
+        addSectionBtn.addEventListener('click', () => {
+            let data = parseMermaidCode(mermaidInput.value); data.sections.push({ name: 'New Section', tasks: [] });
+            const newCode = generateMermaidCode(data); mermaidInput.value = newCode; renderFormFromObject(data); renderMermaid();
+        });
+        const tabButtons = document.querySelectorAll('.tab-button'); const tabPanels = document.querySelectorAll('.tab-panel');
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                tabButtons.forEach(btn => { btn.classList.remove('text-indigo-600', 'border-indigo-600', 'border-b-2'); btn.classList.add('text-slate-500'); });
+                tabPanels.forEach(panel => { panel.classList.add('hidden'); });
+                button.classList.add('text-indigo-600', 'border-indigo-600', 'border-b-2'); button.classList.remove('text-slate-500');
+                document.getElementById(`${button.dataset.tab}-panel`).classList.remove('hidden');
+            });
+        });
+        const zoomInBtn = document.getElementById('zoom-in-btn'); const zoomOutBtn = document.getElementById('zoom-out-btn'); const zoomResetBtn = document.getElementById('zoom-reset-btn');
+        const applyZoom = () => { mermaidOutput.style.transform = `scale(${currentZoom})`; };
+        zoomInBtn.addEventListener('click', () => { currentZoom += 0.1; applyZoom(); });
+        zoomOutBtn.addEventListener('click', () => { currentZoom = Math.max(0.1, currentZoom - 0.1); applyZoom(); });
+        zoomResetBtn.addEventListener('click', () => { currentZoom = 1.0; applyZoom(); });
+        window.addEventListener('load', () => { renderMermaid().then(() => renderFormFromObject(parseMermaidCode(mermaidInput.value))); });
+    </script>
+</body>
+</html>
